@@ -5,7 +5,7 @@ import { test } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import * as fin from "../src/analise/financeiro.js";
-import { extrairJson, textoDaResposta } from "../src/analise/ia.js";
+import { chamar, extrairJson, textoDaResposta } from "../src/analise/ia.js";
 import * as nota from "../src/analise/nota.js";
 import { extrairIdCaixa, interpretarTexto } from "../src/coleta/caixa.js";
 import { pareceBloqueio } from "../src/coleta/navegador.js";
@@ -122,4 +122,18 @@ test("formatação brasileira de valores", () => {
   assert.equal(brl(null), "—");
   assert.equal(pct(-0.0602), "−6,0%");
   assert.equal(pct(0.2, 0), "20%");
+});
+
+test("IA: 503 repete e passa ao próximo modelo; 404 pula; 429 para", async () => {
+  const ok = { status: 200, texto: JSON.stringify({ steps: [{ content: [{ text: "{\"a\":1}" }] }] }) };
+  const chamadas = [];
+  const roteiro = { m1: [{ status: 503, texto: "" }, { status: 503, texto: "" }, { status: 503, texto: "" }], m2: [{ status: 404, texto: "" }], m3: [ok] };
+  const postar = async (c) => { chamadas.push(c.model); return roteiro[c.model].shift(); };
+  const r = await chamar({ input: "x" }, ["m1", "m2", "m3"], { postar, esperaMs: 0 });
+  assert.deepEqual(chamadas, ["m1", "m1", "m1", "m2", "m3"]);
+  assert.equal(r.modelo, "m3");
+  await assert.rejects(chamar({ input: "x", tools: [{}] }, ["m1"], { postar: async () => ({ status: 429, texto: "" }), esperaMs: 0 }),
+    /busca do Google/);
+  await assert.rejects(chamar({ input: "x" }, ["m1"], { postar: async () => ({ status: 503, texto: "" }), esperaMs: 0 }),
+    /Nenhum modelo Gemini disponível/);
 });
