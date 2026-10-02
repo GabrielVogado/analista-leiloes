@@ -45,6 +45,10 @@ Abra um terminal novo e rode `npm start` de novo. Sem a chave, a coleta, as regr
 mercado vira 75%, 85% e 95% da avaliação (ESTIMADO, confiança baixa) e a matrícula escaneada fica como não lida, o que
 aciona trava documental. O plano gratuito tem limite diário de chamadas; ao atingir, a análise segue sem IA e avisa.
 
+Testado em 02/10/2026 com uma chave nova do plano gratuito: a leitura dos documentos funciona, mas a busca do Google
+(usada nos comparáveis) respondeu "cota excedida" em todos os modelos. Nesse caso a análise avisa e usa a fração da
+avaliação; informe os valores de venda conservador, base e otimista nos ajustes do formulário.
+
 ## O que acontece numa análise
 
 1. **Identificação**: extrai o número do imóvel CAIXA do link (CAIXA, leilaoimovel ou outro portal que traga o número).
@@ -95,8 +99,8 @@ e uma certidão sintética (a certidão verdadeira tem dados pessoais e fica for
 | Variável | Padrão | Uso |
 |---|---|---|
 | `GEMINI_API_KEY` | — | Chave gratuita do Gemini (liga a leitura por IA) |
-| `GEMINI_MODELO` | `gemini-3.8-flash` | Modelo que lê os documentos |
-| `GEMINI_MODELO_BUSCA` | `gemini-2.5-flash` | Modelo da pesquisa de comparáveis (busca do Google gratuita só no 2.5) |
+| `GEMINI_MODELO` | `gemini-3.8-flash,gemini-3.5-flash,gemini-3.1-flash-lite` | Modelos que leem os documentos, em ordem: se um estiver sobrecarregado (503) ou indisponível, usa o próximo |
+| `GEMINI_MODELO_BUSCA` | `gemini-3.8-flash,gemini-3.5-flash` | Modelos da pesquisa de comparáveis (busca do Google) |
 | `NAVEGADOR_CANAL` | `msedge` | `msedge`, `chrome` ou vazio para o Chromium do Playwright |
 | `PORT` | `8765` | Porta do servidor |
 | `ANALISTA_DADOS` | `./dados` | Onde ficam as análises e os PDFs |

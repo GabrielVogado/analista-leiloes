@@ -210,7 +210,8 @@ async function rodar(id, entrada, { coletaPronta = null, hoje = hojeBrasilia(), 
           observacao: cp.descricao.slice(0, 120) });
       }
     } catch (ex) {
-      limitacoes.push(`Pesquisa de comparáveis falhou: ${String(ex.message || ex).slice(0, 200)}`);
+      limitacoes.push(`Pesquisa de comparáveis falhou: ${String(ex.message || ex).slice(0, 200)}…`
+        + " Informe os valores de venda conservador, base e otimista nos ajustes do formulário.");
     }
   }
   if (!mercado && im && im.avaliacao) {
@@ -314,7 +315,7 @@ async function rodar(id, entrada, { coletaPronta = null, hoje = hojeBrasilia(), 
     condominioMes,
     pendencias: [...new Set(pendencias)], invalidaria, conferencias, fontes, limitacoes: [...new Set(limitacoes)],
     iaUsada: Boolean(ia) || (mercado.pesquisado && !e.valorMercado),
-    modeloIa: usarIa ? (iaDiligencia ? "simulada" : `${config.geminiModelo} (Gemini, plano gratuito)`) : null,
+    modeloIa: usarIa ? (iaDiligencia ? "simulada" : `${ia?.modeloUsado || config.geminiModelos[0]} (Gemini, plano gratuito)`) : null,
   };
 }
 
