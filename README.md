@@ -22,6 +22,25 @@ npm start
 
 Abra http://localhost:8765.
 
+### Com Docker
+
+Requisito: Docker Desktop instalado e aberto. Não precisa de Node nem de Edge: a imagem já traz o Chromium.
+
+Crie um arquivo `.env` na pasta do projeto (ele fica fora do git) com a chave do Gemini:
+
+```
+GEMINI_API_KEY=sua-chave
+```
+
+Depois:
+
+```bash
+docker compose up -d --build
+```
+
+Abra http://localhost:8765. As análises ficam no volume `dados` do Docker e sobrevivem a reinícios. Para parar:
+`docker compose down`. Para ver o log: `docker compose logs -f`. Sem o `.env`, a plataforma sobe com a IA desligada.
+
 ### Ver o layout sem chave e sem rede
 
 ```bash

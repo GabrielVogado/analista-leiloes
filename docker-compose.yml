@@ -1,0 +1,17 @@
+services:
+  analista:
+    build: .
+    image: analista-leiloes
+    ports:
+      - "8765:8765"
+    environment:
+      # Lida do arquivo .env ao lado deste (fora do git) ou do ambiente. Vazia = IA desligada.
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    volumes:
+      - dados:/dados
+    # O Chromium precisa de mais memória compartilhada que os 64 MB padrão do Docker.
+    shm_size: "1gb"
+    restart: unless-stopped
+
+volumes:
+  dados:
