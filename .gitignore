@@ -1,0 +1,6 @@
+node_modules/
+dados/
+.env
+*.log
+# Certidões reais têm dados pessoais de terceiros: não versionar
+test/fixtures/matricula_[0-9]*.pdf

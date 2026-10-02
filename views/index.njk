@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analista de Leilões</title>
+{% include "_estilo.njk" %}
+</head>
+<body>
+<div class="wrap">
+  <header style="display:grid;gap:6px">
+    <span class="eyebrow">Analista de Leilões</span>
+    <h1>Nova análise de imóvel</h1>
+    <p class="muted">Informe o link do lote e o seu perfil. O sistema abre a página do lote, lê os documentos, pesquisa comparáveis e aplica o método: etiquetas de evidência, custo total em três cenários, nota, travas e decisão.</p>
+    {% if ia %}
+    <p><span class="pill s-ok">IA ligada</span> <span class="small muted">Gemini, plano gratuito: lê a matrícula escaneada e pesquisa comparáveis.</span></p>
+    {% else %}
+    <p><span class="pill s-warn">IA desligada</span> <span class="small muted">A coleta, as regras e as contas rodam. A leitura de matrícula escaneada e a pesquisa de comparáveis precisam de uma chave gratuita do Gemini na variável <code>GEMINI_API_KEY</code>.</span></p>
+    {% endif %}
+  </header>
+
+  <form class="panel" method="post" action="/analises" enctype="multipart/form-data">
+    <fieldset>
+      <legend>Imóvel</legend>
+      <label>Link do lote ou número do imóvel CAIXA
+        <input name="link" required placeholder="https://venda-imoveis.caixa.gov.br/... ou leilaoimovel.com.br/... ou 8555526095620">
+      </label>
+      <div class="campos">
+        <label>Edital (PDF) <span class="muted">opcional</span><input type="file" name="edital" accept="application/pdf"></label>
+        <label>Matrícula (PDF) <span class="muted">recomendado</span><input type="file" name="matricula" accept="application/pdf"></label>
+        <label>Laudo (PDF) <span class="muted">opcional</span><input type="file" name="laudo" accept="application/pdf"></label>
+      </div>
+      <label>Texto da página do lote <span class="muted">opcional: use se o site bloquear o robô (abra a página, Ctrl+A, Ctrl+C e cole aqui)</span>
+        <textarea name="texto_pagina" rows="4"></textarea>
+      </label>
+      <p class="small muted">A CAIXA costuma bloquear o acesso automático (antibot). Quando isso acontece, a análise avisa e não tenta contornar: cole o texto da página acima e envie a matrícula baixada pelo botão "Baixar matrícula do imóvel".</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>Perfil</legend>
+      <div class="campos">
+        <label>Objetivo
+          <select name="objetivo"><option value="revenda">Revenda</option><option value="renda">Renda</option></select></label>
+        <label>Capital próprio disponível (R$) <span class="muted">já com todos os custos</span>
+          <input name="capital_disponivel" required inputmode="decimal" placeholder="20.000"></label>
+        <label>Forma de pagamento
+          <select name="forma_pagamento"><option value="financiado">Financiado</option><option value="à vista">À vista</option></select></label>
+        <label>Margem líquida mínima (%)
+          <input name="margem_minima" value="20" inputmode="decimal"></label>
+        <label>Reforma máxima (R$)
+          <input name="reforma_maxima" value="20.000" inputmode="decimal"></label>
+        <label>Aceita imóvel ocupado?
+          <select name="aceita_ocupado"><option value="sim, se estimado">Sim, com custo e prazo estimados</option><option value="não">Não</option></select></label>
+        <label>Tolerância a risco jurídico
+          <select name="risco_juridico"><option>baixo</option><option selected>médio</option><option>alto</option></select></label>
+      </div>
+    </fieldset>
+
+    <details>
+      <summary class="small" style="cursor:pointer;font-weight:600">Ajustes opcionais (substituem as estimativas)</summary>
+      <div class="campos" style="margin-top:12px">
+        <label>Lance a analisar (R$) <span class="muted">padrão: preço mínimo</span><input name="lance" inputmode="decimal"></label>
+        <label>Valor de venda conservador (R$)<input name="valor_conservador" inputmode="decimal"></label>
+        <label>Valor de venda base (R$)<input name="valor_base" inputmode="decimal"></label>
+        <label>Valor de venda otimista (R$)<input name="valor_otimista" inputmode="decimal"></label>
+        <label>ITBI (%) <span class="muted">alíquota local confirmada</span><input name="itbi" inputmode="decimal"></label>
+        <label>Condomínio mensal (R$)<input name="condominio_mes" inputmode="decimal"></label>
+        <label>Débitos apurados (R$) <span class="muted">condomínio + IPTU</span><input name="debitos" inputmode="decimal"></label>
+        <label>Reforma orçada (R$)<input name="reforma" inputmode="decimal"></label>
+      </div>
+    </details>
+
+    <div><button type="submit">Analisar</button></div>
+    <p class="small muted">Este sistema é um filtro financeiro e documental. Não substitui advogado, avaliador ou vistoria, não garante lucro, desocupação ou ausência de dívidas, e nunca dá lance nem faz pagamento.</p>
+  </form>
+
+  {% if analises.length %}
+  <section class="panel">
+    <h2>Análises recentes</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Data</th><th>Imóvel</th><th>Decisão</th><th class="r">Nota</th></tr></thead>
+      <tbody>
+      {% for a in analises %}
+        <tr><td class="num">{{ a.geradoEm }}</td><td><a href="/analises/{{ a.id }}">{{ a.titulo }}</a></td>
+          <td>{{ a.decisao }}</td><td class="r num">{{ a.nota }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  {% endif %}
+</div>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ r.imovel.titulo }} · Análise de leilão</title>
+{% include "_estilo.njk" %}
+<style>
+.top{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:center}
+@media (max-width:720px){.top{grid-template-columns:1fr}}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--muted)}
+.gauge{display:grid;justify-items:center;gap:2px}
+.gauge svg{width:150px;height:92px}
+.gauge .v{font-family:var(--f-mono);font-size:1.9rem;font-weight:700;margin-top:-46px}
+.verdict{border-left:6px solid var(--muted)}
+.verdict.s-ok,.verdict.s-warn,.verdict.s-bad{color:var(--ink);background:var(--panel)}
+.verdict.s-ok{border-left-color:var(--ok)} .verdict.s-warn{border-left-color:var(--warn)} .verdict.s-bad{border-left-color:var(--bad)}
+.verdict .big{font-weight:800;font-size:1.1rem}
+.verdict.s-ok .big{color:var(--ok)} .verdict.s-warn .big{color:var(--warn)} .verdict.s-bad .big{color:var(--bad)}
+.semaforo{display:flex;gap:8px;align-items:center}
+.semaforo i{width:16px;height:16px;border-radius:50%;background:var(--soft);border:1px solid var(--line)}
+.semaforo i.on.ok{background:var(--ok)} .semaforo i.on.warn{background:var(--warn)} .semaforo i.on.bad{background:var(--bad)}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:2px;min-width:0;align-content:start}
+.kpi .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:1.12rem;font-weight:600;overflow-wrap:anywhere}
+.kpi .l{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.kpi .n{font-size:.75rem;color:var(--muted)}
+.neg{color:var(--bad)}
+.bar{display:grid;grid-template-columns:minmax(120px,220px) 1fr 64px;gap:10px;align-items:center;font-size:.86rem}
+.bar .trk{height:10px;background:var(--soft);border-radius:999px;overflow:hidden}
+.bar .fill{display:block;height:100%;background:var(--accent);border-radius:999px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{font-size:.82rem;font-weight:600;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:6px 12px}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.stack{display:flex;height:18px;border-radius:6px;overflow:hidden;background:var(--soft)}
+.stack span{height:100%;border-right:1px solid var(--panel)}
+.leg{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.leg b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.matriz{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.matriz .col{border:1px solid var(--line);border-radius:8px;padding:10px;display:grid;gap:8px;align-content:start}
+.item{font-size:.84rem;display:grid;gap:2px}
+.foot{font-size:.8rem;color:var(--muted)}
+</style>
+</head>
+<body>
+{% macro tag(e) %}<span class="tag t-{{ e | etq }}">{{ e }}</span>{% endmacro %}
+{% set im = r.imovel %}
+{% set clsDoc = {"confirmado": "s-ok", "conflitante": "s-bad", "ausente": "s-bad", "pendente": "s-warn"} %}
+{% set clsFonte = {"lida": "s-ok", "enviada pelo usuário": "s-ok", "bloqueada": "s-bad", "erro": "s-bad", "não encontrada": "s-info"} %}
+{% set clsNivel = {"crítico": "s-bad", "alto": "s-bad", "médio": "s-warn", "baixo": "s-info"} %}
+<div class="wrap">
+
+<header class="panel top">
+  <div style="display:grid;gap:8px">
+    <span class="eyebrow">Análise de leilão · {{ im.modalidade or "lote" }}{% if im.id %} · CAIXA {{ im.id }}{% endif %}</span>
+    <h1>{{ im.titulo }}</h1>
+    <div class="meta">
+      <span>{{ im.cidade }}/{{ im.uf }}</span>
+      <span>Gerado em {{ r.geradoEm }} (Brasília)</span>
+      <span>Confiança <b>{{ r.confianca }}</b></span>
+      {% if r.iaUsada %}<span>Leitura por IA: {{ r.modeloIa }}</span>{% else %}<span>Sem leitura por IA</span>{% endif %}
+    </div>
+    <div><span class="pill {{ classeDecisao }}">{{ r.decisao }}</span></div>
+  </div>
+  <div class="gauge" aria-label="Nota {{ r.nota }} de 100">
+    <svg viewBox="0 0 120 70" role="img" aria-hidden="true">
+      <path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--soft)" stroke-width="12" stroke-linecap="round"/>
+      {% if r.nota > 0 %}<path d="M10 62 A50 50 0 0 1 110 62" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="{{ r.nota }} 100"/>{% endif %}
+    </svg>
+    <span class="v">{{ r.nota }}</span>
+    <span class="eyebrow">nota 0–100</span>
+  </div>
+</header>
+
+<section class="panel verdict {{ classeDecisao }}">
+  <div class="semaforo">
+    <i class="{{ 'on ok' if classeDecisao == 's-ok' }}"></i><i class="{{ 'on warn' if classeDecisao == 's-warn' }}"></i><i class="{{ 'on bad' if classeDecisao == 's-bad' }}"></i>
+    <span class="big">{{ r.decisao }}</span>
+  </div>
+  <p>{{ r.resumo }}</p>
+  {% if r.travas.length %}
+  <div><h3>Travas acionadas</h3>
+    <ul class="lista">{% for t in r.travas %}<li><span class="pill {{ 's-warn' if t.tipo == 'documental' else 's-bad' }}">{{ t.tipo }}</span> {{ t.descricao }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if r.limitacoes.length %}
+  <div><h3>Limitações desta análise</h3><ul class="lista small">{% for l in r.limitacoes %}<li>{{ l }}</li>{% endfor %}</ul></div>
+  {% endif %}
+</section>
+
+{% if not r.incompleto %}
+{% set fin = r.financeiro %}{% set base = fin.cenarios.BASE %}{% set lm = fin.lanceMaximo %}
+<section class="kgrid" aria-label="Indicadores">
+  <div class="kpi"><span class="l">Avaliação do banco</span><span class="v">{{ im.avaliacao | brl }}</span><span class="n">{{ tag("CONFIRMADO") }} não é valor de mercado</span></div>
+  <div class="kpi"><span class="l">Lance analisado</span><span class="v">{{ r.lanceAnalisado | brl }}</span><span class="n">mínimo {{ im.precoMinimo | brl }}{% if im.desconto %} · {{ im.desconto | pct }} abaixo da avaliação{% endif %}</span></div>
+  <div class="kpi"><span class="l">Custo total (base)</span><span class="v">{{ base.custoTotal | brl }}</span><span class="n">{{ tag("ESTIMADO") }} {{ base.meses }} meses até vender</span></div>
+  <div class="kpi"><span class="l">Valor conservador</span><span class="v">{{ r.mercado.conservador | brl }}</span><span class="n">{{ tag(r.mercado.etiqueta) }} confiança {{ r.mercado.confianca }}</span></div>
+  <div class="kpi"><span class="l">Desconto real</span><span class="v {{ 'neg' if fin.descontoReal < 0 }}">{{ fin.descontoReal | pct }}</span><span class="n">1 − custo base ÷ conservador</span></div>
+  <div class="kpi"><span class="l">Lucro líquido (base)</span><span class="v {{ 'neg' if base.lucro < 0 }}">{{ base.lucro | brl }}</span><span class="n">margem {{ base.margem | pct }} · ROI {{ base.roiCapital | pct }}</span></div>
+  <div class="kpi"><span class="l">Faixa de lance máximo</span><span class="v">{{ lm.faixaMin | brl }} – {{ lm.faixaMax | brl }}</span><span class="n">margem de {{ r.perfil.margemMinima | pct(0) }} no valor conservador</span></div>
+  <div class="kpi"><span class="l">Capital para assinar</span><span class="v">{{ base.capitalAssinatura | brl }}</span><span class="n">+ {{ base.caixaAteRevenda | brl }} até a revenda · disponível {{ r.perfil.capitalDisponivel | brl }}</span></div>
+</section>
+
+<div class="grid2">
+  <section class="panel">
+    <h2>Critérios da nota</h2>
+    {% for nome, c in r.criterios %}
+    <div class="bar"><span>{{ nome }}</span><span class="trk"><span class="fill" style="width:{{ (100 * c.pontos / c.max) | round }}%"></span></span><span class="num" style="text-align:right">{{ c.pontos | round(1) }}/{{ c.max }}</span></div>
+    {% endfor %}
+    <p class="small muted">Nota alta não supera trava crítica. A confiança ({{ r.confianca }}) mede a qualidade das fontes, não o mérito do imóvel.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Cenários</h2>
+    <div class="scroll"><table>
+      <thead><tr><th></th>{% for nome, c in fin.cenarios %}<th class="r">{{ nome }}</th>{% endfor %}</tr></thead>
+      <tbody>
+        <tr><td>Valor de venda</td>{% for nome, c in fin.cenarios %}<td class="r num">{{ c.valorVenda | brl }}</td>{% endfor %}</tr>
+        <tr><td>Custo total</td>{% for nome, c in fin.cenarios %}<td class="r num">{{ c.custoTotal | brl }}</td>{% endfor %}</tr>
+        <tr><td>Lucro líquido</td>{% for nome, c in fin.cenarios %}<td class="r num {{ 'neg' if c.lucro < 0 }}">{{ c.lucro | brl }}</td>{% endfor %}</tr>
+        <tr><td>Margem</td>{% for nome, c in fin.cenarios %}<td class="r num {{ 'neg' if c.margem < 0 }}">{{ c.margem | pct }}</td>{% endfor %}</tr>
+        <tr><td>Capital próprio total</td>{% for nome, c in fin.cenarios %}<td class="r num">{{ c.capitalNecessario | brl }}</td>{% endfor %}</tr>
+        <tr><td>Prazo até vender</td>{% for nome, c in fin.cenarios %}<td class="r num">{{ c.meses }} meses</td>{% endfor %}</tr>
+      </tbody>
+    </table></div>
+    <p class="small muted">Ponto de equilíbrio (custos base, valor conservador): lance de {{ fin.pontoEquilibrio | brl }}.
+    {% if lm.peloCapital !== null %}{% if lm.peloCapital < 1 %}Nenhum lance cabe no capital disponível: só os custos até a revenda já passam dele.{% else %}Maior lance que cabe no capital: {{ lm.peloCapital | brl }}.{% endif %}{% endif %}</p>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Composição dos custos</h2>
+  <div class="tabs" role="tablist">
+    {% for nome, c in fin.cenarios %}<button type="button" role="tab" aria-selected="{{ 'true' if nome == 'BASE' else 'false' }}" data-cen="{{ nome }}">{{ nome }}</button>{% endfor %}
+  </div>
+  {% set cores = ["#1f5f8b","#3f7fa8","#5f97bc","#7faecd","#9fc4dd","#4a6b85","#6b8aa3","#8ca8bf","#adc5d9","#2f5873","#537995","#7699b4","#97b8d1"] %}
+  {% for nome, c in fin.cenarios %}
+  <div class="cen" data-cen="{{ nome }}" {% if nome != 'BASE' %}hidden{% endif %}>
+    <div class="stack" role="img" aria-label="Composição do custo no cenário {{ nome }}">
+      {% for item, v in c.composicao %}{% if v > 0 %}<span title="{{ item }}: {{ v | brl }}" style="width:{{ 100 * v / c.custoTotal }}%;background:{{ cores[loop.index0 % cores.length] }}"></span>{% endif %}{% endfor %}
+    </div>
+    <div class="leg" style="margin:8px 0">{% for item, v in c.composicao %}{% if v > 0 %}<span><b style="background:{{ cores[loop.index0 % cores.length] }}"></b>{{ item }}</span>{% endif %}{% endfor %}</div>
+    <div class="scroll"><table>
+      <tbody>{% for item, v in c.composicao %}<tr><td>{{ item }}</td><td class="r num">{{ v | brl }}</td><td class="r small muted">{{ (100 * v / c.custoTotal) | round(1) }}%</td></tr>{% endfor %}
+      <tr><td><b>Custo total</b></td><td class="r num"><b>{{ c.custoTotal | brl }}</b></td><td></td></tr></tbody>
+    </table></div>
+  </div>
+  {% endfor %}
+  <p class="small muted">Premissas {{ tag("ESTIMADO") }}: ITBI {{ r.itbi.aliquota | pct(1) }} ({{ r.itbi.nota }}); registro 1,5% + R$ 600; {% if r.perfil.formaPagamento == 'financiado' %}entrada de 5%, juros e seguros de 1% a.m. sobre o saldo, tarifas de R$ 1.500; {% endif %}condomínio de {{ r.condominioMes | brl }}/mês e IPTU de R$ 50/mês; débitos de 1%, 3% e 10% da avaliação; corretagem 5%; IR 15% sobre o ganho; contingência 5%.</p>
+</section>
+
+<section class="panel">
+  <h2>Matriz de riscos</h2>
+  <div class="matriz">
+  {% for nivel in ["crítico", "alto", "médio", "baixo"] %}
+    <div class="col"><div><span class="pill {{ clsNivel[nivel] }}">{{ nivel }}</span></div>
+      {% for o in r.onus %}{% if o.gravidade == nivel and not o.cancelado %}<div class="item"><b>{{ o.tipo }}</b><span class="muted">{{ o.descricao }}</span><span>{{ tag(o.etiqueta) }} <span class="small muted">{{ o.fonte }}</span></span></div>{% endif %}{% endfor %}
+      {% for x in r.riscos %}{% if x.nivel == nivel %}<div class="item"><b>{{ x.risco }}</b>{% if x.mitigacao %}<span class="muted">{{ x.mitigacao }}</span>{% endif %}</div>{% endif %}{% endfor %}
+    </div>
+  {% endfor %}
+  </div>
+</section>
+
+<div class="grid2">
+  <section class="panel">
+    <h2>Documentos</h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Documento</th><th>Situação</th><th>Observação</th></tr></thead>
+      <tbody>{% for d in r.documentos %}<tr><td>{{ d.documento }}</td>
+        <td><span class="pill {{ clsDoc[d.status] }}">{{ d.status }}</span></td>
+        <td class="small">{{ d.observacao }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Ocupação e posse</h2>
+    <p><b>{{ r.ocupacao.situacao | capitalize }}</b> {{ tag(r.ocupacao.etiqueta) }}</p>
+    {% if r.ocupacao.trecho %}<p class="small muted">“{{ r.ocupacao.trecho }}”</p>{% endif %}
+    <p class="small">Custo de desocupação {{ tag("ESTIMADO") }}: {% for c, v in r.ocupacao.custos %}{{ c | lower }} {{ v | brl }}{% if not loop.last %} · {% endif %}{% endfor %}.</p>
+    <p class="small">{{ r.ocupacao.estrategia or "Estratégia: confirmar a ocupação antes do lance; se ocupado, prever notificação extrajudicial e, sem acordo, ação de imissão na posse (prazo típico de 4 a 12 meses)." }}</p>
+    <h3>Prazos</h3>
+    <ul class="lista small">
+      <li>Modalidade: {{ im.modalidade or "não identificada" }}{% if im.emDisputa %} · há proposta registrada na disputa{% endif %}.</li>
+      <li>Carregamento até a revenda {{ tag("ESTIMADO") }}: {{ fin.cenarios.OTIMISTA.meses }}, {{ fin.cenarios.BASE.meses }} e {{ fin.cenarios.ESTRESSE.meses }} meses.</li>
+      <li>Revalidar preço, data de encerramento e condições no próprio dia do lance.</li>
+    </ul>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Comparáveis de mercado</h2>
+  <p class="small">{{ r.mercado.metodo }} {{ tag(r.mercado.etiqueta) }} · conservador {{ r.mercado.conservador | brl }} · base {{ r.mercado.base | brl }} · otimista {{ r.mercado.otimista | brl }}{% if r.mercado.aluguelEstimado %} · aluguel estimado {{ r.mercado.aluguelEstimado | brl }}/mês{% endif %}</p>
+  {% if r.mercado.comparaveis.length %}
+  <div class="scroll"><table>
+    <thead><tr><th>Imóvel</th><th>Fonte</th><th>Data</th><th class="r">Área</th><th class="r">Preço</th><th class="r">R$/m²</th><th>Tipo</th></tr></thead>
+    <tbody>{% for c in r.mercado.comparaveis %}<tr><td>{{ c.descricao }}</td><td>{% if c.url %}<a href="{{ c.url }}" target="_blank" rel="noopener noreferrer">{{ c.fonte }}</a>{% else %}{{ c.fonte }}{% endif %}</td>
+      <td class="num">{{ c.data }}</td><td class="r num">{{ c.areaM2 or "—" }}</td><td class="r num">{{ c.preco | brl }}</td><td class="r num">{{ c.precoM2 | brl }}</td><td>{{ c.tipoPreco }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}
+  <p class="small muted">Nenhum comparável pesquisado. {{ tag("NÃO ENCONTRADO") }}</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Dados do imóvel e evidência</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Campo</th><th>Valor</th><th>Etiqueta</th><th>Fonte e trecho</th></tr></thead>
+    <tbody>{% for d in r.dados %}<tr><td>{{ d.campo }}</td><td>{{ d.valor }}</td><td>{{ tag(d.etiqueta) }}</td><td class="small muted">{{ d.fonte }}{% if d.trecho and d.trecho != d.valor %} · “{{ d.trecho | truncate(160) }}”{% endif %}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+{% if r.processos.length or r.debitos.length %}
+<div class="grid2">
+  {% if r.processos.length %}<section class="panel"><h2>Processos</h2><ul class="lista small">{% for p in r.processos %}<li><b>{{ p.numero }}</b> · {{ p.tribunal }} · {{ p.natureza }} · {{ p.situacao }} {{ tag(p.etiqueta) }}</li>{% endfor %}</ul></section>{% endif %}
+  {% if r.debitos.length %}<section class="panel"><h2>Débitos</h2><ul class="lista small">{% for d in r.debitos %}<li><b>{{ d.tipo }}</b>: {% if d.valor !== null %}{{ d.valor | brl }}{% else %}valor não informado{% endif %} · paga: {{ d.quemPaga }} {{ tag(d.etiqueta) }}</li>{% endfor %}</ul></section>{% endif %}
+</div>
+{% endif %}
+{% endif %}
+
+<div class="grid2">
+  <section class="panel">
+    <h2>Checklist de pendências</h2>
+    <ul class="lista">{% for p in r.pendencias %}<li>{{ p }}</li>{% else %}<li class="muted">Nenhuma pendência registrada.</li>{% endfor %}</ul>
+  </section>
+  {% if r.conferencias %}
+  <section class="panel">
+    <h2>Conferências obrigatórias antes do lance</h2>
+    <ul class="lista">{% for c in r.conferencias %}<li>{{ c }}</li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+</div>
+
+{% if r.invalidaria %}
+<section class="panel">
+  <h2>O que invalidaria esta análise</h2>
+  <ul class="lista">{% for c in r.invalidaria %}<li>{{ c }}</li>{% endfor %}</ul>
+</section>
+{% endif %}
+
+<section class="panel">
+  <h2>Fontes primárias consultadas para este imóvel</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Fonte</th><th>Nível</th><th>Situação</th><th>Data e hora</th><th>Observação</th></tr></thead>
+    <tbody>{% for f in r.fontes %}<tr>
+      <td>{% if f.url %}<a href="{{ f.url }}" target="_blank" rel="noopener noreferrer">{{ f.nome }}</a>{% else %}{{ f.nome }}{% endif %}</td>
+      <td class="num">{{ f.nivel }}</td>
+      <td><span class="pill {{ clsFonte[f.status] }}">{{ 'NÃO ENCONTRADO' if f.status == 'não encontrada' else f.status }}</span></td>
+      <td class="num small">{{ f.dataHora }}</td><td class="small muted">{{ f.observacao }}</td></tr>{% endfor %}</tbody>
+  </table></div>
+</section>
+
+<p class="foot">Filtro financeiro e documental. Não substitui advogado, avaliador ou vistoria; não garante lucro, regularização, desocupação ou ausência de dívidas. Nenhum lance ou pagamento é feito por este sistema. Antes do lance: revisão jurídica e vistoria quando possível.
+{% if not exportado %} · <a href="/analises/{{ r.id }}/dashboard.html">Baixar este painel em HTML</a> · <a href="/">Nova análise</a>{% endif %}</p>
+</div>
+<script>
+document.querySelectorAll('.tabs button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.querySelectorAll('.tabs button').forEach(function (x) { x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+    document.querySelectorAll('.cen').forEach(function (c) { c.hidden = c.dataset.cen !== b.dataset.cen; });
+  });
+});
+</script>
+</body>
+</html>
