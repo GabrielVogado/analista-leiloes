@@ -10,7 +10,7 @@ ausência de dívidas, e nunca dá lance nem faz pagamento.
 
 ## Como rodar
 
-Requisitos: Node 20 ou mais novo e Microsoft Edge ou Google Chrome instalados (o Playwright usa o navegador do Windows).
+Requisitos: Node 22 ou mais novo e Microsoft Edge ou Google Chrome instalados (o Playwright usa o navegador do Windows).
 
 ```bash
 npm install
@@ -21,6 +21,15 @@ npm start
 ```
 
 Abra http://localhost:8765.
+
+### Ver o layout sem chave e sem rede
+
+```bash
+npm run demo
+```
+
+Grava duas análises de exemplo (CAIXA Samambaia, com e sem IA simulada, comparáveis fictícios) em `dados/` e mostra os
+links. Rode `npm start` e abra os links, ou a lista "Análises recentes" na tela inicial.
 
 ### IA gratuita (Gemini)
 
