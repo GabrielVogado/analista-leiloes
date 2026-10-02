@@ -10,7 +10,7 @@ ausência de dívidas, e nunca dá lance nem faz pagamento.
 
 ## Como rodar
 
-Requisitos: Node 20 ou mais novo e Microsoft Edge ou Google Chrome instalados (o Playwright usa o navegador do Windows).
+Requisitos: Node 22 ou mais novo e Microsoft Edge ou Google Chrome instalados (o Playwright usa o navegador do Windows).
 
 ```bash
 npm install
@@ -21,6 +21,15 @@ npm start
 ```
 
 Abra http://localhost:8765.
+
+### Ver o layout sem chave e sem rede
+
+```bash
+npm run demo
+```
+
+Grava duas análises de exemplo (CAIXA Samambaia, com e sem IA simulada, comparáveis fictícios) em `dados/` e mostra os
+links. Rode `npm start` e abra os links, ou a lista "Análises recentes" na tela inicial.
 
 ### IA gratuita (Gemini)
 
@@ -35,6 +44,10 @@ setx GEMINI_API_KEY "sua-chave"
 Abra um terminal novo e rode `npm start` de novo. Sem a chave, a coleta, as regras e as contas funcionam; o valor de
 mercado vira 75%, 85% e 95% da avaliação (ESTIMADO, confiança baixa) e a matrícula escaneada fica como não lida, o que
 aciona trava documental. O plano gratuito tem limite diário de chamadas; ao atingir, a análise segue sem IA e avisa.
+
+Testado em 02/10/2026 com uma chave nova do plano gratuito: a leitura dos documentos funciona, mas a busca do Google
+(usada nos comparáveis) respondeu "cota excedida" em todos os modelos. Nesse caso a análise avisa e usa a fração da
+avaliação; informe os valores de venda conservador, base e otimista nos ajustes do formulário.
 
 ## O que acontece numa análise
 
@@ -86,8 +99,8 @@ e uma certidão sintética (a certidão verdadeira tem dados pessoais e fica for
 | Variável | Padrão | Uso |
 |---|---|---|
 | `GEMINI_API_KEY` | — | Chave gratuita do Gemini (liga a leitura por IA) |
-| `GEMINI_MODELO` | `gemini-3.8-flash` | Modelo que lê os documentos |
-| `GEMINI_MODELO_BUSCA` | `gemini-2.5-flash` | Modelo da pesquisa de comparáveis (busca do Google gratuita só no 2.5) |
+| `GEMINI_MODELO` | `gemini-3.8-flash,gemini-3.5-flash,gemini-3.1-flash-lite` | Modelos que leem os documentos, em ordem: se um estiver sobrecarregado (503) ou indisponível, usa o próximo |
+| `GEMINI_MODELO_BUSCA` | `gemini-3.8-flash,gemini-3.5-flash` | Modelos da pesquisa de comparáveis (busca do Google) |
 | `NAVEGADOR_CANAL` | `msedge` | `msedge`, `chrome` ou vazio para o Chromium do Playwright |
 | `PORT` | `8765` | Porta do servidor |
 | `ANALISTA_DADOS` | `./dados` | Onde ficam as análises e os PDFs |

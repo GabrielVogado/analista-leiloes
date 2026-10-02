@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 
 export const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+function lista(valor, padrao) {
+  return String(valor || padrao).split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 export const config = {
   porta: Number(process.env.PORT || 8765),
   dirAnalises: path.join(process.env.ANALISTA_DADOS || path.join(RAIZ, "dados"), "analises"),
@@ -12,9 +16,12 @@ export const config = {
   navegadorTimeoutMs: Number(process.env.NAVEGADOR_TIMEOUT_MS || 45000),
   // IA gratuita: Gemini (plano grátis do Google AI Studio).
   geminiChave: () => process.env.GEMINI_API_KEY || "",
-  geminiModelo: process.env.GEMINI_MODELO || "gemini-3.8-flash",
-  // A busca no Google só é gratuita nos modelos 2.5 (até 500 consultas por dia).
-  geminiModeloBusca: process.env.GEMINI_MODELO_BUSCA || "gemini-2.5-flash",
+  // Modelos em ordem de preferência (separados por vírgula). Se um estiver sobrecarregado (503) ou não
+  // existir para a chave (404), a chamada passa para o próximo. O 2.5 não aceita mais chaves novas.
+  geminiModelos: lista(process.env.GEMINI_MODELO, "gemini-3.8-flash,gemini-3.5-flash,gemini-3.1-flash-lite"),
+  geminiModelosBusca: lista(process.env.GEMINI_MODELO_BUSCA, "gemini-3.8-flash,gemini-3.5-flash"),
+  // Espera entre tentativas quando o modelo responde 503 (alta demanda).
+  geminiEsperaMs: Number(process.env.GEMINI_ESPERA_MS ?? 4000),
 };
 
 export function iaDisponivel() {
