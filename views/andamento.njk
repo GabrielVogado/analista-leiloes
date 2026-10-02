@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Análise em andamento</title>
+{% if not status.concluida %}<meta http-equiv="refresh" content="3">{% endif %}
+{% include "_estilo.njk" %}
+</head>
+<body>
+<div class="wrap">
+  <section class="panel">
+    <span class="eyebrow">Análise {{ id }}</span>
+    {% if status.erro %}
+      <h1>A análise falhou</h1>
+      <p><span class="pill s-bad">{{ status.etapa }}</span></p>
+      <pre class="small mono" style="white-space:pre-wrap;margin:0">{{ status.erro }}</pre>
+      <p><a class="btn sec" href="/">Voltar</a></p>
+    {% else %}
+      <h1>Analisando o imóvel</h1>
+      <p><span class="pill s-info">{{ status.etapa }}</span> <span class="small muted">atualizado {{ status.atualizado }}</span></p>
+      <p class="muted small">A leitura dos documentos e a pesquisa de comparáveis com IA podem levar alguns minutos. Esta página se atualiza sozinha.</p>
+    {% endif %}
+  </section>
+</div>
+</body>
+</html>

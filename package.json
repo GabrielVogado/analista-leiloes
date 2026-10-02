@@ -1,0 +1,21 @@
+{
+  "name": "analista-leiloes",
+  "version": "0.1.0",
+  "description": "Plataforma web de análise de imóveis de leilão: coleta, diligência, custo em três cenários, nota, travas e decisão.",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/servidor.js",
+    "test": "node --test test/"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^2.0.0",
+    "nunjucks": "^3.2.4",
+    "pdfjs-dist": "^4.10.38",
+    "playwright": "^1.48.0"
+  }
+}
